@@ -51,6 +51,8 @@ jobs:
                - Severidad o prioridad estimada, mencionada como texto (no como label).
                - NO implementes ni propongas codigo de solucion todavia: el objetivo de este comentario es solo
                  diagnosticar, para que el equipo decida despues como abordar la implementacion.
+               - El comentario debe estar escrito en formato Markdown valido que GitLab pueda interpretar
+                 correctamente (encabezados, listas, bloques de codigo con backticks, etc.).
 
             Si el issue fue editado y ya existe un comentario de diagnostico previo tuyo, no lo edites: publica
             siempre un comentario nuevo que refleje el analisis actualizado, dejando el historial visible.
