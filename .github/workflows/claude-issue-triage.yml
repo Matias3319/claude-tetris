@@ -1,0 +1,56 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+concurrency:
+  group: claude-issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Permite a Claude leer el issue, asignar labels existentes y comentar via gh CLI
+          claude_args: '--allowedTools "Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*)"'
+
+          prompt: |
+            Estas analizando el issue #${{ github.event.issue.number }} del repositorio ${{ github.repository }}
+            (un Tetris en JavaScript vanilla, sin dependencias ni build step; ver CLAUDE.md para la arquitectura de game.js).
+
+            Segui estos pasos:
+
+            1. Lee el issue completo con `gh issue view ${{ github.event.issue.number }} --json title,body,labels,comments`.
+            2. Revisa el codigo fuente relevante (game.js, index.html, style.css) para entender el contexto del problema o la solicitud descrita.
+            3. Consulta las labels existentes del repositorio con `gh label list`. Elegi unicamente entre esas labels
+               (no crees labels nuevas) las que mejor describan el issue.
+            4. Aplica las labels elegidas con
+               `gh issue edit ${{ github.event.issue.number }} --add-label "label1,label2"`.
+               Si el issue ya tenia labels que ya no corresponden tras tu analisis, quitalas con `--remove-label`.
+            5. Publica un comentario nuevo con
+               `gh issue comment ${{ github.event.issue.number }} --body "..."` que contenga un diagnostico general:
+               - Resumen de lo que el usuario reporta o solicita.
+               - Causa probable o area/archivo/funcion de game.js involucrada, si aplica.
+               - Severidad o prioridad estimada, mencionada como texto (no como label).
+               - NO implementes ni propongas codigo de solucion todavia: el objetivo de este comentario es solo
+                 diagnosticar, para que el equipo decida despues como abordar la implementacion.
+
+            Si el issue fue editado y ya existe un comentario de diagnostico previo tuyo, no lo edites: publica
+            siempre un comentario nuevo que refleje el analisis actualizado, dejando el historial visible.
